@@ -59,4 +59,5 @@ function sanitizeEvent(evt) {
     }
   }
 }
+
 export { sanitizeEvent, event_keys_to_remove, default_event_options_dict };
