@@ -12,7 +12,6 @@ try {
   const off_canvas = canvas.transferControlToOffscreen();
   EDWorker.postMessage(off_canvas, [off_canvas]);
 } catch (e) {
-  // no support for OffscreenCanvas, we'll just log evt
   EDWorker.onmessage = (evt) => {
     console.log("from worker", evt.data);
   };

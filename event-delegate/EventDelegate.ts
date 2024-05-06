@@ -3,16 +3,28 @@ import {
   stringifyOptions,
   defaultOptionsDict,
 } from "./EventDelegateUtilz.js";
+import { slotItem } from "./types.js";
+import { sanitizeEvent } from "./utilz.js";
+
+type callbacksT = {
+  [key: string]: slotItem[];
+};
+
 class EventDelegate {
-  constructor(EvtPort, context) {
+  public EvtPort: MessagePort;
+  public context: string;
+  public callbacks: callbacksT;
+
+  constructor(EvtPort: MessagePort, context: string) {
     this.EvtPort = EvtPort; // the port to communicate with main
     this.context = context; // can help identify our target
     this.callbacks = {}; // we'll store the added callbacks here
+
     EvtPort.onmessage = (evt) => {
-      const evt_object = evt.data; // evt_obj is sanitized event
+      const evt_object: ReturnType<typeof sanitizeEvent> = evt.data; // evt_obj is sanitized event
       const slot = this.callbacks[evt_object.type];
       if (slot) {
-        const to_remove = [];
+        const to_remove: number[] = [];
         slot.forEach(({ callback, options }, index) => {
           try {
             callback(evt_object);
@@ -32,7 +44,12 @@ class EventDelegate {
       }
     };
   }
-  addEventListener(type, callback, options = defaultOptionsDict) {
+
+  addEventListener(
+    type: string,
+    callback: Function,
+    options = defaultOptionsDict,
+  ) {
     const callbacks = this.callbacks;
     let slot = callbacks[type];
     if (!slot) {
@@ -50,18 +67,27 @@ class EventDelegate {
       slot.push(new_item);
     }
   }
-  removeEventListener(type, callback, options = defaultOptionsDict) {
+
+  removeEventListener(
+    type: string,
+    callback: Function,
+    options = defaultOptionsDict,
+  ) {
     const callbacks = this.callbacks;
     const slot = callbacks[type];
     const options_as_string = stringifyOptions(options);
+
     const item = getStoredItem(slot, {
       callback,
       options_as_string,
     });
+
     const index = item && slot.indexOf(item);
+
     if (item) {
-      slot.splice(index, 1);
+      slot.splice(index as number, 1);
     }
+
     if (slot && !slot.length) {
       delete callbacks[type];
       // we tell the main thread to remove the event handler
@@ -70,4 +96,5 @@ class EventDelegate {
     }
   }
 }
+
 export default EventDelegate;
